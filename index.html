@@ -7,19 +7,32 @@
       font-family: "Segoe UI", Arial, sans-serif;
       background-color: #36393f;
       color: #ddd;
-      max-width: 700px;
+      max-width: 800px;
       margin: 20px auto;
       padding: 0 10px;
     }
     h2 { text-align: center; color: #fff; }
+    #formWrapper {
+      background-color: #2f3136;
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #444;
+    }
     iframe {
       width: 100%;
       height: 260px;
       border: none;
-      margin-bottom: 20px;
       border-radius: 8px;
-      background-color: #2f3136;
     }
+    #controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    #search { padding: 5px 8px; border-radius: 5px; border: none; width: 60%; }
+    #loadMore { padding: 5px 10px; border-radius: 5px; border: none; background: #7289da; color: #fff; cursor: pointer; }
+    #analytics { color:#ccc; font-size:0.9em; margin-bottom:10px; }
     #feed {
       border: 1px solid #444;
       padding: 10px;
@@ -40,104 +53,162 @@
       transform: translateY(10px);
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
-    .message.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .message.show { opacity: 1; transform: translateY(0); }
+    .message-left { flex-direction: row; }
+    .message-right { flex-direction: row-reverse; }
     .message:nth-child(even) { background-color: #2c2f33; }
     .message:nth-child(odd) { background-color: #3a3f45; }
     .pfp {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      margin-right: 10px;
+      margin: 0 10px;
       object-fit: cover;
       border: 2px solid #555;
     }
-    .content {
-      display: flex;
-      flex-direction: column;
-    }
+    .content { display: flex; flex-direction: column; max-width: 80%; }
     .username { font-weight: bold; color: #7289da; }
-    .timestamp {
-      font-size: 0.75em;
-      color: #999;
-      margin-bottom: 4px;
-    }
+    .timestamp { font-size: 0.75em; color: #999; margin-bottom: 4px; }
     .text { font-size: 1em; color: #eee; }
+    #typingIndicator { color:#999; font-style:italic; margin-top:5px; display:none; }
   </style>
 </head>
 <body>
 
-  <h2>Message Now Network</h2>
+<h2>Message Now Network</h2>
 
-  <!-- Embed Your Google Form -->
+<div id="formWrapper">
   <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfvxNfttwqVLFNqmEorNQXhnvifmEFryaRnZPyTk06hl6OltA/viewform?embedded=true"></iframe>
+</div>
 
-  <h3>Live Feed</h3>
-  <div id="feed">Loading messages…</div>
+<div id="controls">
+  <input type="text" id="search" placeholder="Search messages...">
+  <button id="loadMore">Load More</button>
+</div>
 
-  <script>
-    const feedDiv = document.getElementById('feed');
-    const jsonUrl = 'https://script.google.com/macros/s/AKfycbx3Vd0bdpkQYYiR69o6q8DWMGD1Ycw5SbssvvSyFZKOhXEOFNwWsPOPC9BsKihZw9RN/exec';
-    const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
+<div id="analytics">Loading analytics…</div>
+<div id="feed">Loading messages…</div>
+<div id="typingIndicator">Someone is typing...</div>
 
-    async function fetchMessages() {
-      try {
-        const res = await fetch(jsonUrl);
-        const data = await res.json();
+<script>
+const feedDiv = document.getElementById('feed');
+const searchInput = document.getElementById('search');
+const loadMoreBtn = document.getElementById('loadMore');
+const typingDiv = document.getElementById('typingIndicator');
+const analyticsDiv = document.getElementById('analytics');
 
-        if (!data || data.length === 0) {
-          feedDiv.innerHTML = 'No messages yet.';
-          return;
-        }
+const jsonUrl = 'https://script.google.com/macros/s/AKfycbzckT0GQJOZGY21gbRw1H55bqC_TJS3CvzhEhBD8Wt4b6AFZu_5P1aXsezKOuGa2BD7/exec';
+const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
 
-        const newFeed = document.createDocumentFragment();
+let allMessages = [];
+let displayedCount = 20;
+let previousMessageCount = 0;
 
-        data.forEach((item, idx) => {
-          const timestamp = item.timestamp || '';
-          const username = item.username || 'Anonymous';
-          const pfpUrl = item.pfp || defaultPFP;
-          const msg = item.message || '';
+// Parse emojis and GIFs/images
+function parseMessage(text) {
+  text = text.replace(/:smile:/g, "😄")
+             .replace(/:heart:/g, "❤️")
+             .replace(/:thumbsup:/g, "👍");
 
-          const messageEl = document.createElement('div');
-          messageEl.className = 'message';
+  const urlPattern = /(https?:\/\/\S+\.(?:gif|png|jpg|jpeg))/gi;
+  text = text.replace(urlPattern, match => 
+    `<img src="${match}" style="max-width:200px; max-height:200px; border-radius:8px; margin-top:5px;">`
+  );
 
-          const pfpImg = document.createElement('img');
-          pfpImg.className = 'pfp';
-          pfpImg.src = pfpUrl;
-          pfpImg.onerror = () => { pfpImg.src = defaultPFP; };
+  return text;
+}
 
-          const contentDiv = document.createElement('div');
-          contentDiv.className = 'content';
-          contentDiv.innerHTML =
-            `<span class="username">${username}</span>` +
-            `<span class="timestamp">${timestamp}</span>` +
-            `<span class="text">${msg}</span>`;
+// Render feed with left/right bubbles and animation
+function renderFeed() {
+  feedDiv.innerHTML = '';
+  const filtered = allMessages.filter(m => {
+    const query = searchInput.value.toLowerCase();
+    return m.username.toLowerCase().includes(query) || m.message.toLowerCase().includes(query);
+  });
+  const slice = filtered.slice(-displayedCount);
 
-          messageEl.appendChild(pfpImg);
-          messageEl.appendChild(contentDiv);
-          newFeed.appendChild(messageEl);
-        });
+  slice.forEach((item, idx) => {
+    const msgEl = document.createElement('div');
+    msgEl.className = 'message ' + (idx % 2 === 0 ? 'message-left' : 'message-right');
 
-        feedDiv.innerHTML = '';
-        feedDiv.appendChild(newFeed);
+    const pfpImg = document.createElement('img');
+    pfpImg.className = 'pfp';
+    pfpImg.src = item.pfp || defaultPFP;
+    pfpImg.onerror = () => { pfpImg.src = defaultPFP; };
 
-        feedDiv.querySelectorAll('.message').forEach((m, idx) => {
-          setTimeout(() => m.classList.add('show'), idx * 50);
-        });
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'content';
+    contentDiv.innerHTML = `
+      <span class="username">${item.username}</span>
+      <span class="timestamp">${item.timestamp}</span>
+      <span class="text">${parseMessage(item.message)}</span>
+    `;
 
-        feedDiv.scrollTop = feedDiv.scrollHeight;
+    msgEl.appendChild(pfpImg);
+    msgEl.appendChild(contentDiv);
+    feedDiv.appendChild(msgEl);
 
-      } catch (err) {
-        console.error(err);
-        feedDiv.innerHTML = 'Error loading messages.';
-      }
+    setTimeout(() => msgEl.classList.add('show'), idx * 50);
+  });
+
+  // Auto-scroll if near bottom
+  if (feedDiv.scrollHeight - feedDiv.scrollTop - feedDiv.clientHeight < 50) {
+    feedDiv.scrollTop = feedDiv.scrollHeight;
+  }
+}
+
+// Update analytics
+function updateAnalytics() {
+  const totalMessages = allMessages.length;
+  const usernames = [...new Set(allMessages.map(m => m.username || 'Anonymous'))];
+  const totalUsers = usernames.length;
+
+  const perDay = {};
+  allMessages.forEach(m => {
+    const day = m.timestamp ? m.timestamp.split(' ')[0] : 'Unknown';
+    perDay[day] = (perDay[day] || 0) + 1;
+  });
+
+  const perDayStr = Object.entries(perDay)
+    .map(([day, count]) => `${day}: ${count}`)
+    .join(' | ');
+
+  analyticsDiv.innerHTML = `
+    Total messages: ${totalMessages} | Users: ${totalUsers} <br>
+    Messages per day: ${perDayStr}
+  `;
+}
+
+// Fetch messages from Apps Script JSON
+async function fetchMessages() {
+  try {
+    const res = await fetch(jsonUrl, { cache: "no-store" });
+    const data = await res.json();
+
+    // Typing indicator
+    if (data.length > previousMessageCount) {
+      typingDiv.style.display = 'block';
+      setTimeout(() => typingDiv.style.display = 'none', 2000);
     }
+    previousMessageCount = data.length;
 
-    fetchMessages();
-    setInterval(fetchMessages, 4000);
-  </script>
+    allMessages = data;
+    renderFeed();
+    updateAnalytics();
+  } catch(e) {
+    console.error(e);
+    feedDiv.innerHTML = 'Error loading messages.';
+  }
+}
+
+// Event listeners
+searchInput.addEventListener('input', renderFeed);
+loadMoreBtn.addEventListener('click', () => { displayedCount += 20; renderFeed(); });
+
+// Initial fetch + interval
+fetchMessages();
+setInterval(fetchMessages, 4000);
+</script>
 
 </body>
 </html>
