@@ -137,6 +137,9 @@ function renderMessages() {
   const messages = allMessages.slice(-messagesToShow).reverse();
 
   messages.forEach(msgObj => {
+    // Skip messages where username is "del"
+    if ((msgObj.username || "").toLowerCase() === "del") return;
+
     const messageEl = document.createElement('div');
     messageEl.className = 'message';
 
@@ -175,7 +178,7 @@ function renderMessages() {
     feedDiv.appendChild(messageEl);
   });
 
-  // Scroll to top to show newest messages
+  // Scroll to top for newest messages
   feedDiv.scrollTop = 0;
 }
 
