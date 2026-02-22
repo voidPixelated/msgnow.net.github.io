@@ -79,25 +79,26 @@
 
   <script>
     const feedDiv = document.getElementById('feed');
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwYntqhUaZQ-BHRWKG9Daq0j7vumaaAz4KaawR1XwGjTxpu6oUgXscecKmGBdNUv9SbluNU9N0fwag/pub?output=csv';
+    const jsonUrl = 'https://script.google.com/macros/s/AKfycbx3Vd0bdpkQYYiR69o6q8DWMGD1Ycw5SbssvvSyFZKOhXEOFNwWsPOPC9BsKihZw9RN/exec';
     const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
 
     async function fetchMessages() {
       try {
-        const res = await fetch(csvUrl);
-        const text = await res.text();
-        const lines = text.trim().split('\n');
+        const res = await fetch(jsonUrl);
+        const data = await res.json();
 
-        if (lines.length < 2) return;
+        if (!data || data.length === 0) {
+          feedDiv.innerHTML = 'No messages yet.';
+          return;
+        }
 
         const newFeed = document.createDocumentFragment();
 
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          const timestamp = cols[0] || '';
-          const username = cols[1] || 'Anonymous';
-          const pfpUrl = cols[2] || defaultPFP;
-          const msg = cols[3] || '';
+        data.forEach((item, idx) => {
+          const timestamp = item.timestamp || '';
+          const username = item.username || 'Anonymous';
+          const pfpUrl = item.pfp || defaultPFP;
+          const msg = item.message || '';
 
           const messageEl = document.createElement('div');
           messageEl.className = 'message';
@@ -117,7 +118,7 @@
           messageEl.appendChild(pfpImg);
           messageEl.appendChild(contentDiv);
           newFeed.appendChild(messageEl);
-        }
+        });
 
         feedDiv.innerHTML = '';
         feedDiv.appendChild(newFeed);
