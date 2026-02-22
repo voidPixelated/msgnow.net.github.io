@@ -1,73 +1,142 @@
-<style>
-  .message {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    max-width: 100%;
-    word-break: break-word;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-  .message.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-</style>
-
-<script>
-  async function fetchMessages() {
-    try {
-      const res = await fetch(csvUrl);
-      const text = await res.text();
-      const lines = text.trim().split('\n');
-
-      if (lines.length < 2) return;
-
-      const newFeed = document.createDocumentFragment(); // temp container
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        const timestamp = cols[0] || '';
-        const username = cols[1] || 'Anonymous';
-        const pfpUrl = cols[2] || defaultPFP;
-        const msg = cols[3] || '';
-
-        const messageEl = document.createElement('div');
-        messageEl.className = 'message';
-
-        const pfpImg = document.createElement('img');
-        pfpImg.className = 'pfp';
-        pfpImg.src = pfpUrl;
-        pfpImg.onerror = () => { pfpImg.src = defaultPFP; };
-
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'content';
-        contentDiv.innerHTML =
-          `<span class="username">${username}</span>` +
-          `<span class="timestamp">${timestamp}</span>` +
-          `<span class="text">${msg}</span>`;
-
-        messageEl.appendChild(pfpImg);
-        messageEl.appendChild(contentDiv);
-        newFeed.appendChild(messageEl);
-      }
-
-      // Replace old feed after building new one
-      feedDiv.innerHTML = '';
-      feedDiv.appendChild(newFeed);
-
-      // Animate messages in
-      feedDiv.querySelectorAll('.message').forEach((m, idx) => {
-        setTimeout(() => m.classList.add('show'), idx * 50);
-      });
-
-      // Scroll to bottom
-      feedDiv.scrollTop = feedDiv.scrollHeight;
-
-    } catch (err) {
-      console.error(err);
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Message Now Network</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #36393f;
+      color: #ddd;
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 0 10px;
     }
-  }
-</script>
+    h2 { text-align: center; color: #fff; }
+    iframe {
+      width: 100%;
+      height: 260px;
+      border: none;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      background-color: #2f3136;
+    }
+    #feed {
+      border: 1px solid #444;
+      padding: 10px;
+      max-height: 500px;
+      overflow-y: auto;
+      background: #2f3136;
+      border-radius: 8px;
+    }
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 100%;
+      word-break: break-word;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .message:nth-child(even) { background-color: #2c2f33; }
+    .message:nth-child(odd) { background-color: #3a3f45; }
+    .pfp {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+      object-fit: cover;
+      border: 2px solid #555;
+    }
+    .content {
+      display: flex;
+      flex-direction: column;
+    }
+    .username { font-weight: bold; color: #7289da; }
+    .timestamp {
+      font-size: 0.75em;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .text { font-size: 1em; color: #eee; }
+  </style>
+</head>
+<body>
+
+  <h2>Message Now Network</h2>
+
+  <!-- Embed Your Google Form -->
+  <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfvxNfttwqVLFNqmEorNQXhnvifmEFryaRnZPyTk06hl6OltA/viewform?embedded=true"></iframe>
+
+  <h3>Live Feed</h3>
+  <div id="feed">Loading messages…</div>
+
+  <script>
+    const feedDiv = document.getElementById('feed');
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwYntqhUaZQ-BHRWKG9Daq0j7vumaaAz4KaawR1XwGjTxpu6oUgXscecKmGBdNUv9SbluNU9N0fwag/pub?output=csv';
+    const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
+
+    async function fetchMessages() {
+      try {
+        const res = await fetch(csvUrl);
+        const text = await res.text();
+        const lines = text.trim().split('\n');
+
+        if (lines.length < 2) return;
+
+        const newFeed = document.createDocumentFragment();
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          const timestamp = cols[0] || '';
+          const username = cols[1] || 'Anonymous';
+          const pfpUrl = cols[2] || defaultPFP;
+          const msg = cols[3] || '';
+
+          const messageEl = document.createElement('div');
+          messageEl.className = 'message';
+
+          const pfpImg = document.createElement('img');
+          pfpImg.className = 'pfp';
+          pfpImg.src = pfpUrl;
+          pfpImg.onerror = () => { pfpImg.src = defaultPFP; };
+
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'content';
+          contentDiv.innerHTML =
+            `<span class="username">${username}</span>` +
+            `<span class="timestamp">${timestamp}</span>` +
+            `<span class="text">${msg}</span>`;
+
+          messageEl.appendChild(pfpImg);
+          messageEl.appendChild(contentDiv);
+          newFeed.appendChild(messageEl);
+        }
+
+        feedDiv.innerHTML = '';
+        feedDiv.appendChild(newFeed);
+
+        feedDiv.querySelectorAll('.message').forEach((m, idx) => {
+          setTimeout(() => m.classList.add('show'), idx * 50);
+        });
+
+        feedDiv.scrollTop = feedDiv.scrollHeight;
+
+      } catch (err) {
+        console.error(err);
+        feedDiv.innerHTML = 'Error loading messages.';
+      }
+    }
+
+    fetchMessages();
+    setInterval(fetchMessages, 4000);
+  </script>
+
+</body>
+</html>
