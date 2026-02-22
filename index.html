@@ -63,7 +63,7 @@ const loadMoreBtn = document.getElementById('loadMore');
 const typingDiv = document.getElementById('typingIndicator');
 const analyticsDiv = document.getElementById('analytics');
 
-const jsonUrl = 'https://script.google.com/macros/s/AKfycbx94OKWmzFoPzM5tn85-sxScEkWFtgIoqSqvqvHVmqPPN31-IfUyZLHNRKi3l9T_dY/exec';
+const jsonUrl = 'https://script.google.com/macros/s/AKfycbw_fejT-XB-jgZag1AGo9a_nCsvGmgncI1Y81cS9pdFgc33sdAcRVukKmZavWVn7j78/exec';
 const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
 
 let allMessages = [];
@@ -77,7 +77,7 @@ function parseMessage(text) {
              .replace(/:thumbsup:/g, "👍");
 
   const urlPattern = /(https?:\/\/\S+\.(?:gif|png|jpg|jpeg))/gi;
-  text = text.replace(urlPattern, match => 
+  text = text.replace(urlPattern, match =>
     `<img src="${match}" style="max-width:200px; max-height:200px; border-radius:8px; margin-top:5px;">`
   );
 
@@ -117,7 +117,6 @@ function renderFeed() {
     setTimeout(() => msgEl.classList.add('show'), idx * 50);
   });
 
-  // Auto-scroll if near bottom
   if (feedDiv.scrollHeight - feedDiv.scrollTop - feedDiv.clientHeight < 50) {
     feedDiv.scrollTop = feedDiv.scrollHeight;
   }
@@ -151,7 +150,6 @@ async function fetchMessages() {
     const res = await fetch(jsonUrl, { cache: "no-store" });
     const data = await res.json();
 
-    // Typing indicator
     if (data.length > previousMessageCount) {
       typingDiv.style.display = 'block';
       setTimeout(() => typingDiv.style.display = 'none', 2000);
@@ -167,11 +165,9 @@ async function fetchMessages() {
   }
 }
 
-// Event listeners
 searchInput.addEventListener('input', renderFeed);
 loadMoreBtn.addEventListener('click', () => { displayedCount += 20; renderFeed(); });
 
-// Initial fetch + interval
 fetchMessages();
 setInterval(fetchMessages, 4000);
 </script>
