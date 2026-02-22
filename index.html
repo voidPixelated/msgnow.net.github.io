@@ -1,175 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Message Now Network</title>
-  <style>
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background-color: #36393f;
-      color: #ddd;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 0 10px;
-    }
-    h2 { text-align: center; color: #fff; }
-    #formWrapper {
-      background-color: #2f3136;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      border: 1px solid #444;
-    }
-    iframe { width: 100%; height: 260px; border: none; border-radius: 8px; }
-    #controls { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    #search { padding: 5px 8px; border-radius: 5px; border: none; width: 60%; }
-    #loadMore { padding: 5px 10px; border-radius: 5px; border: none; background: #7289da; color: #fff; cursor: pointer; }
-    #analytics { color:#ccc; font-size:0.9em; margin-bottom:10px; }
-    #feed { border: 1px solid #444; padding: 10px; max-height: 500px; overflow-y: auto; background: #2f3136; border-radius: 8px; }
-    .message { display: flex; align-items: flex-start; margin-bottom: 12px; padding: 8px 12px; border-radius: 10px; max-width: 100%; word-break: break-word; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
-    .message.show { opacity: 1; transform: translateY(0); }
-    .message-left { flex-direction: row; }
-    .message-right { flex-direction: row-reverse; }
-    .message:nth-child(even) { background-color: #2c2f33; }
-    .message:nth-child(odd) { background-color: #3a3f45; }
-    .pfp { width: 40px; height: 40px; border-radius: 50%; margin: 0 10px; object-fit: cover; border: 2px solid #555; }
-    .content { display: flex; flex-direction: column; max-width: 80%; }
-    .username { font-weight: bold; color: #7289da; }
-    .timestamp { font-size: 0.75em; color: #999; margin-bottom: 4px; }
-    .text { font-size: 1em; color: #eee; }
-    #typingIndicator { color:#999; font-style:italic; margin-top:5px; display:none; }
-  </style>
+<meta charset="UTF-8">
+<title>Message Now Network</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #2c2f33;
+    color: #ddd;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  h2 {
+    text-align: center;
+    color: #fff;
+  }
+
+  iframe {
+    width: 100%;
+    height: 300px;
+    border: none;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+
+  #feed {
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: #23272a;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .message {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 12px;
+    border-radius: 10px;
+    word-break: break-word;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .message:nth-child(odd) {
+    background-color: #2c2f33;
+  }
+  .message:nth-child(even) {
+    background-color: #3a3f45;
+  }
+
+  .pfp {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    border: 2px solid #555;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .username {
+    font-weight: bold;
+    color: #7289da;
+  }
+
+  .timestamp {
+    font-size: 0.75em;
+    color: #999;
+    margin-bottom: 4px;
+  }
+
+  .text {
+    font-size: 1em;
+    color: #eee;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #loadMore {
+    margin-top: 10px;
+    background-color: #7289da;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  #typing {
+    font-style: italic;
+    color: #aaa;
+    margin-top: 5px;
+  }
+</style>
 </head>
 <body>
 
 <h2>Message Now Network</h2>
 
-<div id="formWrapper">
-  <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfvxNfttwqVLFNqmEorNQXhnvifmEFryaRnZPyTk06hl6OltA/viewform?embedded=true"></iframe>
-</div>
+<!-- Google Form Embed -->
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfvxNfttwqVLFNqmEorNQXhnvifmEFryaRnZPyTk06hl6OltA/viewform?embedded=true"></iframe>
 
-<div id="controls">
-  <input type="text" id="search" placeholder="Search messages...">
-  <button id="loadMore">Load More</button>
-</div>
-
-<div id="analytics">Loading analytics…</div>
+<h3>Live Feed</h3>
 <div id="feed">Loading messages…</div>
-<div id="typingIndicator">Someone is typing...</div>
+<div id="typing"></div>
+<button id="loadMore">Load More Messages</button>
 
 <script>
 const feedDiv = document.getElementById('feed');
-const searchInput = document.getElementById('search');
+const typingDiv = document.getElementById('typing');
 const loadMoreBtn = document.getElementById('loadMore');
-const typingDiv = document.getElementById('typingIndicator');
-const analyticsDiv = document.getElementById('analytics');
-
-const jsonUrl = 'https://script.google.com/macros/s/AKfycbw_fejT-XB-jgZag1AGo9a_nCsvGmgncI1Y81cS9pdFgc33sdAcRVukKmZavWVn7j78/exec';
-const defaultPFP = 'https://i.imgur.com/5QfJ5mL.png';
+const csvUrl = "https://script.google.com/macros/s/AKfycbxQiP4z80woDPKMfhP_gW-jNygnbB-shDk1WJlgHYabMCFtCO_lLKhOP-H6ZsEjlSA1/exec";
 
 let allMessages = [];
-let displayedCount = 20;
-let previousMessageCount = 0;
+let messagesToShow = 10; // initial messages shown
 
-// Parse emojis and GIFs/images
-function parseMessage(text) {
-  text = text.replace(/:smile:/g, "😄")
-             .replace(/:heart:/g, "❤️")
-             .replace(/:thumbsup:/g, "👍");
-
-  const urlPattern = /(https?:\/\/\S+\.(?:gif|png|jpg|jpeg))/gi;
-  text = text.replace(urlPattern, match =>
-    `<img src="${match}" style="max-width:200px; max-height:200px; border-radius:8px; margin-top:5px;">`
-  );
-
-  return text;
-}
-
-// Render feed with left/right bubbles and animation
-function renderFeed() {
+function renderMessages() {
   feedDiv.innerHTML = '';
-  const filtered = allMessages.filter(m => {
-    const query = searchInput.value.toLowerCase();
-    return m.username.toLowerCase().includes(query) || m.message.toLowerCase().includes(query);
-  });
-  const slice = filtered.slice(-displayedCount);
+  const messages = allMessages.slice(-messagesToShow); // show last N messages
 
-  slice.forEach((item, idx) => {
-    const msgEl = document.createElement('div');
-    msgEl.className = 'message ' + (idx % 2 === 0 ? 'message-left' : 'message-right');
+  messages.forEach(msgObj => {
+    const messageEl = document.createElement('div');
+    messageEl.className = 'message';
 
     const pfpImg = document.createElement('img');
     pfpImg.className = 'pfp';
-    pfpImg.src = item.pfp || defaultPFP;
-    pfpImg.onerror = () => { pfpImg.src = defaultPFP; };
+    pfpImg.src = msgObj.pfp || 'https://i.imgur.com/5QfJ5mL.png';
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'content';
-    contentDiv.innerHTML = `
-      <span class="username">${item.username}</span>
-      <span class="timestamp">${item.timestamp}</span>
-      <span class="text">${parseMessage(item.message)}</span>
-    `;
 
-    msgEl.appendChild(pfpImg);
-    msgEl.appendChild(contentDiv);
-    feedDiv.appendChild(msgEl);
+    const usernameSpan = document.createElement('span');
+    usernameSpan.className = 'username';
+    usernameSpan.textContent = msgObj.username || "Anonymous";
 
-    setTimeout(() => msgEl.classList.add('show'), idx * 50);
+    const timestampSpan = document.createElement('span');
+    timestampSpan.className = 'timestamp';
+    const dt = new Date(msgObj.timestamp);
+    timestampSpan.textContent = dt.toLocaleString();
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'text';
+    let text = msgObj.message || "";
+    // simple emoji replacement
+    text = text.replace(/:smile:/g, "😄").replace(/:laugh:/g, "😆");
+    // GIFs / image links
+    const gifRegex = /(https?:\/\/\S+\.(?:gif|webp|png|jpg))/gi;
+    text = text.replace(gifRegex, url => `<img src="${url}" style="max-width:200px; max-height:200px; display:block; margin-top:5px;">`);
+    textSpan.innerHTML = text;
+
+    contentDiv.appendChild(usernameSpan);
+    contentDiv.appendChild(timestampSpan);
+    contentDiv.appendChild(textSpan);
+
+    messageEl.appendChild(pfpImg);
+    messageEl.appendChild(contentDiv);
+    feedDiv.appendChild(messageEl);
   });
 
-  if (feedDiv.scrollHeight - feedDiv.scrollTop - feedDiv.clientHeight < 50) {
-    feedDiv.scrollTop = feedDiv.scrollHeight;
-  }
+  feedDiv.scrollTop = feedDiv.scrollHeight;
 }
 
-// Update analytics
-function updateAnalytics() {
-  const totalMessages = allMessages.length;
-  const usernames = [...new Set(allMessages.map(m => m.username || 'Anonymous'))];
-  const totalUsers = usernames.length;
-
-  const perDay = {};
-  allMessages.forEach(m => {
-    const day = m.timestamp ? m.timestamp.split(' ')[0] : 'Unknown';
-    perDay[day] = (perDay[day] || 0) + 1;
-  });
-
-  const perDayStr = Object.entries(perDay)
-    .map(([day, count]) => `${day}: ${count}`)
-    .join(' | ');
-
-  analyticsDiv.innerHTML = `
-    Total messages: ${totalMessages} | Users: ${totalUsers} <br>
-    Messages per day: ${perDayStr}
-  `;
-}
-
-// Fetch messages from Apps Script JSON
 async function fetchMessages() {
   try {
-    const res = await fetch(jsonUrl, { cache: "no-store" });
+    typingDiv.textContent = "Fetching messages…";
+    const res = await fetch(csvUrl);
     const data = await res.json();
-
-    if (data.length > previousMessageCount) {
-      typingDiv.style.display = 'block';
-      setTimeout(() => typingDiv.style.display = 'none', 2000);
-    }
-    previousMessageCount = data.length;
-
     allMessages = data;
-    renderFeed();
-    updateAnalytics();
-  } catch(e) {
-    console.error(e);
-    feedDiv.innerHTML = 'Error loading messages.';
+    renderMessages();
+    typingDiv.textContent = "";
+  } catch (err) {
+    console.error(err);
+    typingDiv.textContent = "Error loading messages.";
   }
 }
 
-searchInput.addEventListener('input', renderFeed);
-loadMoreBtn.addEventListener('click', () => { displayedCount += 20; renderFeed(); });
-
+// Initial fetch
 fetchMessages();
+
+// Refresh every 4 seconds
 setInterval(fetchMessages, 4000);
+
+// Load more messages button
+loadMoreBtn.addEventListener('click', () => {
+  messagesToShow += 10;
+  renderMessages();
+});
 </script>
 
 </body>
